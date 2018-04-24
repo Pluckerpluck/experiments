@@ -2,3 +2,7 @@
     max-width: 90%;
     max-height: 90vh;
 }
+
+body {
+    overflow:hidden;
+}
