@@ -36,12 +36,8 @@
       </div>
     </nav>
 
-    <main role="main" class="container-fluid">
-
-      <div class="text-center">
-        <img src="map.jpg" id="map">
-      </div>
-  
+    <main role="main" class="container-fluid full-map" id="map-container">
+      <div class="dot"></div>
     </main><!-- /.container -->
 
     <!-- Optional JavaScript -->
@@ -53,35 +49,100 @@
     <script type="text/javascript">     
 
       $(document).ready(function () {
-        $("#map").blowup({
-          "width": 8000,
-          "height": 5000,
-          "round": false,
-          "scale": 0.7
+
+
+        var scale = 1;
+
+        var locked = false;
+
+         
+
+        var $map = $("#map-container");
+        var NATIVE_IMG    = new Image();
+        NATIVE_IMG.src    = $map.css('background-image').replace(/^url\(['"](.+)['"]\)/, '$1');
+
+        $map.click(function(e) {
+          locked = locked ? false: true;
+          $(".dot").css({
+            "top": (e.pageY - 25) + "px",
+            "left": (e.pageX - 25) + "px"
+          }).toggle();
+
+          var event = $.Event('mousemove');
+
+          // coordinates
+          event.pageX = e.originalEvent.pageX;
+          event.pageY = e.originalEvent.pageY; 
+
+          $map.trigger(event);
+
+        });
+        
+        //Firefox
+        $('body').bind('wheel', function(e){
+
+        if(e.originalEvent.deltaY > 0) {
+            //scroll down
+          scale += -0.1
+          } else {
+              //scroll up
+              scale += 0.1
+          }
+
+          if (scale < 0.2) {
+            scale = 0.2;
+          }
+
+          var event = $.Event('mousemove');
+
+          // coordinates
+          event.pageX = e.originalEvent.pageX;
+          event.pageY = e.originalEvent.pageY; 
+
+          $map.trigger(event);
+
+          //prevent page fom scrolling
+          return false;
         });
 
-         //Firefox
-         $('body').bind('wheel', function(e){
+        $map.mousemove(function (e) {
 
-            if(e.originalEvent.deltaY > 0) {
-                //scroll down
-                $options.scale += -0.1
-            } else {
-                //scroll up
-                $options.scale += 0.1
-            }
+          if (locked) {
+            return;
+          }
 
-            var event = $.Event('mousemove');
+          // Relative coordinates of image
+          var relX = (e.pageX - $map.offset().left) / $map.width();
+          var relY = (e.pageY - $map.offset().top) / $map.height();
 
-            // coordinates
-            event.pageX = e.originalEvent.pageX;
-            event.pageY = e.originalEvent.pageY; 
+          // Screw with the relative coordinates to give a little border to make navigation simpler
+          relX = Math.min(1, Math.max(0, relX * 1.1 - 0.05));
+          relY = Math.min(1, Math.max(0, relY * 1.1 - 0.05));
 
-            $("#map").trigger(event);
+          // Zoomed image coordinates 
+          var zoomX = -Math.floor(relX  * (NATIVE_IMG.width * scale - $map.width()));
+          var zoomY = -Math.floor(relY * (NATIVE_IMG.height * scale - $map.height()));
 
-            //prevent page fom scrolling
-            return false;
-        });
+          var backPos = zoomX + "px " + zoomY + "px";
+          var backgroundSize = NATIVE_IMG.width * scale + "px " + NATIVE_IMG.height * scale + "px";
+
+          // Apply styles to lens
+          $map.css({
+            "background-size"     : backgroundSize,
+            "background-position" : backPos
+          });
+
+        })
+
+        // Show magnification lens
+        $map.mouseleave(function () {
+          if (!locked) {
+            $map.css({
+              "background-size"     : "contain",
+              "background-position" : "center"
+            })
+          }
+        })
 
         
       })

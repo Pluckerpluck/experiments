@@ -1,8 +1,32 @@
+body {
+    display:flex;
+    flex-direction: column;
+    height:100vh;
+    overflow:hidden;
+}
+
 #map {
     max-width: 90%;
     max-height: 90vh;
 }
 
-body {
-    overflow:hidden;
+.container-fluid.full-map {
+    padding-right:0;
+    padding-left:0;
+    height: 100%;
+    background-size: contain;
+    background-image: url("map.jpg");
+    background-repeat: no-repeat;
+    background-position: center;
+    cursor: crosshair;
+}
+
+.dot {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-color: red;
+    border: solid black;
+    border-radius: 50%;
+    display: none;
 }
