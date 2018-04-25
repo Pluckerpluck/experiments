@@ -11,6 +11,13 @@
     <link rel="stylesheet" href="map.css">
 
     <title>My Experiments - Hollow Knight</title>
+
+    <style>
+      .container-fluid.full-map{
+        background-size: auto;
+        background-position: 0 0;
+      }
+    </style>
   </head>
   <body>
     <nav class="navbar navbar-expand-md navbar-dark bg-dark">
@@ -29,15 +36,15 @@
             <div class="dropdown-menu">
               <a class="dropdown-item" href="map.html">System 1</a>
               <a class="dropdown-item" href="map2.html">System 2</a>
-              <a class="dropdown-item active" href="map3.html">System 3</a>
-              <a class="dropdown-item" href="map4.html">System 4</a>
+              <a class="dropdown-item" href="map3.html">System 3</a>
+              <a class="dropdown-item active" href="map4.html">System 4</a>
             </div>
           </li>
         </ul>
       </div>
     </nav>
 
-    <main role="main" class="container-fluid full-map" id="map-container">
+    <main role="main" class="container-fluid full-map" id="map-container" draggable="false">
       <div class="dot"></div>
     </main><!-- /.container -->
 
@@ -54,86 +61,95 @@
 
         var scale = 1;
 
-        var locked = false;
-
-         
 
         var $map = $("#map-container");
         var NATIVE_IMG    = new Image();
         NATIVE_IMG.src    = $map.css('background-image').replace(/^url\(['"](.+)['"]\)/, '$1');
+        
+        var isDragging = false;
 
-        $map.click(function(e) {
-          locked = locked ? false: true;
-          $(".dot").css({
-            "top": (e.pageY - 25) + "px",
-            "left": (e.pageX - 25) + "px"
-          }).toggle();
+        var startX = 0;
+        var startY = 0;
 
-          var event = $.Event('mousemove');
+        var mouseX = 0, mouseY = 0;
 
-          // coordinates
-          event.pageX = e.originalEvent.pageX;
-          event.pageY = e.originalEvent.pageY; 
+        var imageX = 0, imageY = 0;
 
-          $map.trigger(event);
+        //Firefox
+        $('body').bind('wheel', function(e){
+          if (isDragging) {
+            return;
+          }
+
+          var prev_scale = scale;
+
+          if(e.originalEvent.deltaY > 0) {
+              //scroll down
+            scale += -0.1
+          } else {
+            //scroll up
+            scale += 0.1
+          }
+
+          if (scale < 0.3) {
+            scale = 0.3;
+          }
+
+          var oldMapX = (e.pageX - $map.position().left - imageX) * $map.width()/(NATIVE_IMG.width * prev_scale);
+          var oldMapY = (e.pageY - $map.position().top  - imageY) * $map.height()/(NATIVE_IMG.height * prev_scale);
+
+
+          imageX = (imageX/prev_scale * scale);
+          imageY = (imageY/prev_scale * scale);
+
+          var newScreenX = (oldMapX * (NATIVE_IMG.width * scale)/$map.width()) + $map.position().left + imageX;
+          var newScreenY = (oldMapY * (NATIVE_IMG.height * scale)/$map.height()) + $map.position().top + imageY;
+
+          imageX = imageX - (newScreenX - e.pageX);
+          imageY = imageY - (newScreenY - e.pageY);
+
+          var backPos = imageX + "px " + imageY + "px";
+          $map.css("background-position", backPos);
+
+          var backgroundSize = NATIVE_IMG.width * scale + "px " + NATIVE_IMG.height * scale + "px";
+          $map.css("background-size", backgroundSize);
 
         });
         
-        //Firefox
-        $('body').bind('wheel', function(e){
+        
 
-        if(e.originalEvent.deltaY > 0) {
-            //scroll down
-          scale += -0.1
-          } else {
-              //scroll up
-              scale += 0.1
-          }
+        $map
+        .mousedown(function(e) {
+            isDragging = true;
+            startX = e.pageX;
+            startY = e.pageY;
+        })
+        .mouseup(function(e) {
+            isDragging = false;
 
-          if (scale < 0.2) {
-            scale = 0.2;
-          }
-
-          var event = $.Event('mousemove');
-
-          // coordinates
-          event.pageX = e.originalEvent.pageX;
-          event.pageY = e.originalEvent.pageY; 
-
-          $map.trigger(event);
-
-          //prevent page fom scrolling
-          return false;
+            imageX = imageX + (e.pageX - startX);
+            imageY = imageY + (e.pageY - startY);
         });
 
         $map.mousemove(function (e) {
 
-          if (locked) {
+          mouseX = e.pageX;
+          mouseY = e.pageY;
+
+          if (!isDragging) {
             return;
           }
 
           // Relative coordinates of image
-          var relX = (e.pageX - $map.offset().left) / $map.width();
-          var relY = (e.pageY - $map.offset().top) / $map.height();
+          var moveX = (e.pageX - startX);
+          var moveY = (e.pageY - startY);
 
-          // Screw with the relative coordinates to give a little border to make navigation simpler
-          relX = Math.min(1, Math.max(0, relX * 1.1 - 0.05));
-          relY = Math.min(1, Math.max(0, relY * 1.1 - 0.05));
-
-          // Zoomed image coordinates 
-          var zoomX = -Math.floor(relX  * (NATIVE_IMG.width * scale - $map.width()));
-          var zoomY = -Math.floor(relY * (NATIVE_IMG.height * scale - $map.height()));
-
-          var backPos = zoomX + "px " + zoomY + "px";
-          var backgroundSize = NATIVE_IMG.width * scale + "px " + NATIVE_IMG.height * scale + "px";
-
-          // Apply styles to lens
-          $map.css({
-            "background-size"     : backgroundSize,
-            "background-position" : backPos
-          });
+          var backPos = (imageX + moveX) + "px " + (imageY + moveY) + "px";
+          $map.css("background-position", backPos);
 
         })
+
+
         
       })
 
